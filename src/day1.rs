@@ -1,17 +1,42 @@
 use aoc_runner_derive::*;
 
+/// A box storing all meals, snacks, etc. and the position the box is in within the elves.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CalorieBox {
-    pub position: usize,
-    pub calories: Vec<u32>,
+    position: usize,
+    calories: Vec<u32>,
 }
 
 impl CalorieBox {
+    #[allow(dead_code)]
+    pub fn new(position: usize, calories: &[u32]) -> CalorieBox {
+        CalorieBox { position, calories: Vec::from(calories) }
+    }
+
+    /// Generate a total of all calories within the box
     pub fn total(&self) -> u32 {
         self.calories.iter().sum()
     }
 }
 
+/// Given an input in the form of numbers across lines, transform that input into a series of
+/// CalorieBoxes.
+///
+/// # Example
+///
+/// ```rust
+/// # use aoc::day1::*;
+/// let given_calories = "1000\n2000\n3000\n\n4000\n\n5000\n6000\n\n7000\n8000\n9000\n\n10000";
+/// let boxes = input_generator(given_calories);
+/// let manual = vec![
+///     CalorieBox::new(0, &[1000, 2000, 3000]),
+///     CalorieBox::new(1, &[4000]),
+///     CalorieBox::new(2, &[5000, 6000]),
+///     CalorieBox::new(3, &[7000, 8000, 9000]),
+///     CalorieBox::new(4, &[10000]),
+/// ];
+/// assert_eq!(boxes, manual);
+/// ```
 #[aoc_generator(day1)]
 pub fn input_generator(input: &str) -> Vec<CalorieBox> {
     let mut boxes = vec![];
@@ -28,10 +53,35 @@ pub fn input_generator(input: &str) -> Vec<CalorieBox> {
     boxes
 }
 
+/// Get the largest box from a slice of CalorieBox.
+///
+/// # Panics
+///
+/// If the input contains no boxes, the function will panic.
+///
+/// # Example
+///
+/// ```rust
+/// # use aoc::day1::*;
+/// let given_calories = "1000\n2000\n3000\n\n4000\n\n5000\n6000\n\n7000\n8000\n9000\n\n10000";
+/// let boxes = input_generator(given_calories);
+/// assert_eq!(get_largest_box(&boxes).total(), 24000);
+/// ```
 pub fn get_largest_box(input: &[CalorieBox]) -> &CalorieBox {
     input.iter().max_by(|a, b| a.total().partial_cmp(&b.total()).unwrap()).expect("empty input")
 }
 
+/// Get the largest set of boxes from a slice of CalorieBox.
+///
+/// # Example
+///
+/// ```rust
+/// # use aoc::day1::*;
+/// let given_calories = "1000\n2000\n3000\n\n4000\n\n5000\n6000\n\n7000\n8000\n9000\n\n10000";
+/// let boxes = input_generator(given_calories);
+/// let total = sum_boxes(&get_largest_boxes(&boxes, 3));
+/// assert_eq!(total, 45000);
+/// ```
 pub fn get_largest_boxes(input: &[CalorieBox], count: usize) -> Vec<CalorieBox> {
     let mut boxes = Vec::from(input);
     boxes.sort_by(|a, b| b.total().partial_cmp(&a.total()).unwrap());
@@ -39,63 +89,29 @@ pub fn get_largest_boxes(input: &[CalorieBox], count: usize) -> Vec<CalorieBox> 
     boxes
 }
 
+/// Get the sum of all calories in the given boxes.
+///
+/// # Example
+///
+/// ```rust
+/// # use aoc::day1::*;
+/// let given_calories = "1000\n2000\n3000\n\n4000\n\n5000\n6000\n\n7000\n8000\n9000\n\n10000";
+/// let boxes = input_generator(given_calories);
+/// let total = sum_boxes(&get_largest_boxes(&boxes, 3));
+/// assert_eq!(total, 45000);
+/// ```
 pub fn sum_boxes(input: &[CalorieBox]) -> u32 {
     input.iter().map(|b| b.total()).sum::<u32>()
 }
 
+#[doc(hidden)]
 #[aoc(day1, part1)]
 pub fn solve_part1(input: &[CalorieBox]) -> String {
     get_largest_box(input).total().to_string()
 }
 
+#[doc(hidden)]
 #[aoc(day1, part2)]
 pub fn solve_part2(input: &[CalorieBox]) -> String {
     sum_boxes(&get_largest_boxes(input, 3)).to_string()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-        const GIVEN_CALORIES: &'static str = "1000
-2000
-3000
-
-4000
-
-5000
-6000
-
-7000
-8000
-9000
-
-10000";
-
-    #[test]
-    fn parse_given_input() {
-        // Take input from Advent of Code
-        let boxes = input_generator(GIVEN_CALORIES);
-        let manual = vec![
-            CalorieBox { position: 0, calories: vec![1000, 2000, 3000] },
-            CalorieBox { position: 1, calories: vec![4000] },
-            CalorieBox { position: 2, calories: vec![5000, 6000] },
-            CalorieBox { position: 3, calories: vec![7000, 8000, 9000] },
-            CalorieBox { position: 4, calories: vec![10000] },
-        ];
-        assert_eq!(boxes, manual);
-    }
-
-    #[test]
-    fn get_given_max_calories() {
-        let boxes = input_generator(GIVEN_CALORIES);
-        assert_eq!(get_largest_box(&boxes).total(), 24000);
-    }
-
-    #[test]
-    fn get_given_multiple_max_calories() {
-        let boxes = input_generator(GIVEN_CALORIES);
-        let total = sum_boxes(&get_largest_boxes(&boxes, 3));
-        assert_eq!(total, 45000);
-    }
 }
