@@ -28,13 +28,13 @@ use aoc_runner_derive::*;
 /// let similar_chars = Vec::from_iter(
 ///     rucksacks
 ///         .iter()
-///         .map(|(a, b, c)| common_chars(a, common_chars(b, c).as_str()))
+///         .filter_map(|rs| rs.iter().cloned().reduce(common_chars))
 ///         .filter_map(|s| s.chars().next())
 /// );
 /// assert_eq!(similar_chars, vec!['r', 'Z']);
-pub fn common_chars(c1: &str, c2: &str) -> String {
-    let hsa: HashSet<char> = HashSet::from_iter(c1.chars());
-    let hsb: HashSet<char> = HashSet::from_iter(c2.chars());
+pub fn common_chars(c1: impl AsRef<str>, c2: impl AsRef<str>) -> String {
+    let hsa: HashSet<char> = HashSet::from_iter(c1.as_ref().chars());
+    let hsb: HashSet<char> = HashSet::from_iter(c2.as_ref().chars());
     hsa.intersection(&hsb).collect()
 }
 
@@ -64,7 +64,7 @@ pub fn common_chars(c1: &str, c2: &str) -> String {
 /// let priorities = Vec::from_iter(
 ///     rucksacks
 ///         .iter()
-///         .map(|(a, b, c)| common_chars(a, common_chars(b, c).as_str()))
+///         .filter_map(|rs| rs.iter().cloned().reduce(common_chars))
 ///         .filter_map(|s| s.chars().next())
 ///         .filter_map(priority)
 /// );
@@ -130,23 +130,23 @@ pub fn input_generator_part1(input: &str) -> Vec<(String, String)> {
 /// CrZsJsPPZsGzwwsLwLmpwMDw";
 /// let rucksacks = input_generator_part2(lines);
 /// let expected = vec![
-///     ("vJrwpWtwJgWrhcsFMMfFFhFp".to_string(),
+///     ["vJrwpWtwJgWrhcsFMMfFFhFp".to_string(),
 ///      "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL".to_string(),
-///      "PmmdzqPrVvPwwTWBwg".to_string()),
-///     ("wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn".to_string(),
+///      "PmmdzqPrVvPwwTWBwg".to_string()],
+///     ["wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn".to_string(),
 ///      "ttgJtRGJQctTZtZT".to_string(),
-///      "CrZsJsPPZsGzwwsLwLmpwMDw".to_string())
+///      "CrZsJsPPZsGzwwsLwLmpwMDw".to_string()]
 /// ];
 /// assert_eq!(rucksacks, expected);
 #[aoc_generator(day3, part2)]
-pub fn input_generator_part2(input: &str) -> Vec<(String, String, String)> {
+pub fn input_generator_part2(input: &str) -> Vec<[String; 3]> {
     // Note: This function is messy. It allocates two vectors because it needs to iterate over
     // slices of the first. This isn't *ideal* but it's not *that* bad.
     let lines = input.lines().map(String::from).collect::<Vec<_>>();
     lines
         .chunks(3)
         .map(|n| match n {
-            [l1, l2, l3] => (l1.clone(), l2.clone(), l3.clone()),
+            [l1, l2, l3] => [l1.clone(), l2.clone(), l3.clone()],
             v => panic!("bad input: {v:?}"),
         })
         .collect()
@@ -157,7 +157,7 @@ pub fn input_generator_part2(input: &str) -> Vec<(String, String, String)> {
 pub fn solve_part1(compartments: &[(String, String)]) -> String {
     compartments
         .iter()
-        .filter_map(|(c1, c2)| common_chars(c1.as_str(), c2.as_str()).chars().next())
+        .filter_map(|(c1, c2)| common_chars(c1, c2).chars().next())
         .filter_map(priority)
         .sum::<u32>()
         .to_string()
@@ -165,10 +165,10 @@ pub fn solve_part1(compartments: &[(String, String)]) -> String {
 
 #[doc(hidden)]
 #[aoc(day3, part2)]
-pub fn solve_part2(rucksacks: &[(String, String, String)]) -> String {
+pub fn solve_part2(rucksacks: &[[String; 3]]) -> String {
     rucksacks
         .iter()
-        .map(|(a, b, c)| common_chars(a, common_chars(b, c).as_str()))
+        .filter_map(|rs| rs.iter().cloned().reduce(common_chars))
         .filter_map(|s| s.chars().next())
         .filter_map(priority)
         .sum::<u32>()
