@@ -42,16 +42,10 @@ impl Play {
     ///
     /// ```rust
     /// # use aoc::day2::*;
-    /// let given_plays = "A Y\nB X\nC Z";
-    /// let games = input_generator(given_plays);
-    /// let points: u32 = games
-    ///     .iter()
-    ///     .map(|(play_left, play_right)|
-    ///          Game(*play_left, Play::from_strategy(play_left, play_right)
-    ///                           .expect("Unable to devise strategy")))
-    ///     .map(|g| g.points())
-    ///     .sum();
-    /// assert_eq!(points, 12);
+    /// let play = Play::Rock;
+    /// let input = ["X", "Y", "Z"];
+    /// let strategies = input.map(|s| Play::from_strategy(&play, s).unwrap());
+    /// assert_eq!(strategies, [Play::Scissors, Play::Rock, Play::Paper]);
     /// ```
     pub fn from_strategy(from: &Play, strategy: &str) -> Result<Play> {
         match strategy {
@@ -100,11 +94,9 @@ impl Game {
     /// ```rust
     /// # use aoc::day2::*;
     /// let given_plays = "A Y\nB X\nC Z";
-    /// let games = input_generator(given_plays);
+    /// let games = input_generator_part1(given_plays);
     /// let points: u32 = games
     ///     .iter()
-    ///     .map(|(play_left, play_right)|
-    ///          Game(*play_left, play_right.parse().expect("invalid play")))
     ///     .map(|g| g.points())
     ///     .sum();
     /// assert_eq!(points, 15);
@@ -120,51 +112,78 @@ impl Game {
 }
 
 /// Given an input in the form of Plays, where A, B, and C are the first player's Rock, Paper, or
-/// Scissor, generate a list of Plays with an additional strategy on the right. The strategy can
-/// either be parsed to a Play or used as a strategy to pick a winning/losing/drawing piece.
+/// Scissor, and X, Y, and Z are our Rock, Paper, or Scissor, generate a Vec of Games.
 ///
 /// # Example
 ///
 /// ```rust
 /// # use aoc::day2::*;
 /// let given_plays = "A Y\nB X\nC Z";
-/// let games = input_generator(given_plays)
-///     .iter()
-///     .map(|(play_left, play_right)|
-///          Game(*play_left, play_right.parse().expect("invalid play")))
-///     .collect::<Vec<_>>();
+/// let games = input_generator_part1(given_plays);
 /// assert_eq!(games, vec![
 ///     Game(Play::Rock, Play::Paper),
 ///     Game(Play::Paper, Play::Rock),
 ///     Game(Play::Scissors, Play::Scissors)
 /// ]);
 /// ```
-#[aoc_generator(day2)]
-pub fn input_generator(input: &str) -> Vec<(Play, String)> {
+#[aoc_generator(day2, part1)]
+pub fn input_generator_part1(input: &str) -> Vec<Game> {
     input
         .lines()
-        .map(|line| {
+        .filter_map(|line| {
             let mut split = line.split(' ');
             let play_left: Play = split
-                .next()
-                .expect("No split data was available")
+                .next()?
                 .parse()
-                .expect("Was not given a valid play");
+                .ok()?;
+            let play_right = split
+                .next()?
+                .parse()
+                .ok()?;
+            Some(Game(play_left, play_right))
+        })
+        .collect()
+}
+
+/// Given an input in the form of Plays, where A, B, and C are the first player's Rock, Paper, or
+/// Scissor, and X, Y, and Z are whether the Play should result in a Loss, Tie, or Win, generate
+/// a Vec of Games.
+///
+/// # Example
+///
+/// ```rust
+/// # use aoc::day2::*;
+/// let given_plays = "A Y\nB X\nC Z";
+/// let games = input_generator_part2(given_plays);
+/// assert_eq!(games, vec![
+///     Game(Play::Rock, Play::Rock),
+///     Game(Play::Paper, Play::Rock),
+///     Game(Play::Scissors, Play::Rock)
+/// ]);
+/// ```
+#[aoc_generator(day2, part2)]
+pub fn input_generator_part2(input: &str) -> Vec<Game> {
+    input
+        .lines()
+        .filter_map(|line| {
+            let mut split = line.split(' ');
+            let play_left: Play = split
+                .next()?
+                .parse()
+                .ok()?;
             let play_right = split
                 .next()
-                .expect("No split data was available")
-                .to_string();
-            (play_left, play_right)
+                .and_then(|s| Play::from_strategy(&play_left, s).ok())?;
+            Some(Game(play_left, play_right))
         })
         .collect()
 }
 
 #[doc(hidden)]
 #[aoc(day2, part1)]
-pub fn solve_part1(input: &[(Play, String)]) -> String {
+pub fn solve_part1(input: &[Game]) -> String {
     let total: u32 = input
         .iter()
-        .map(|(play_left, play_right)| Game(*play_left, play_right.parse().expect("invalid play")))
         .map(|g| g.points())
         .sum();
     total.to_string()
@@ -172,12 +191,9 @@ pub fn solve_part1(input: &[(Play, String)]) -> String {
 
 #[doc(hidden)]
 #[aoc(day2, part2)]
-pub fn solve_part2(input: &[(Play, String)]) -> String {
+pub fn solve_part2(input: &[Game]) -> String {
     let points: u32 = input
         .iter()
-        .map(|(play_left, play_right)|
-             Game(*play_left, Play::from_strategy(play_left, play_right)
-                              .expect("Unable to devise strategy")))
         .map(|g| g.points())
         .sum();
     points.to_string()
